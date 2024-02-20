@@ -1,0 +1,1207 @@
+openapi: "3.0.0"
+info:
+  title: "Recommender System API"
+  description: "API for managing Recommender System"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:5000"
+
+paths:
+  /api/user:
+    post:
+      summary: User Signup
+      description: Endpoint to register a new user.
+      tags:
+        - User Authentication API
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "User's email address."
+                username:
+                  type: string
+                  description: "User's username."
+                password:
+                  type: string
+                  description: "User's password."
+
+      responses:
+        "200":
+          description: "User registered successfully."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    $ref: "#/components/schemas/User"
+                  auth_token:
+                    type: string
+                    description: "Authentication token for the registered user."
+        "400":
+          description: "Bad Request - Invalid input data."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid input data."
+        "401":
+          description: "Unauthorized - User already exists."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User already exists! Try with another email or username."
+        "403":
+          description: "Forbidden - An error occurred during registration."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "An error occurred! Please enter the details again."
+
+  /login:
+    post:
+      summary: User Login
+      description: Log in with an existing user account.
+      tags:
+        - User Authentication API
+      parameters:
+        - in: query
+          name: include_auth_token
+          schema:
+            type: boolean
+          description: Include authentication token in the response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                  description: "User's email or username."
+                password:
+                  type: string
+              required:
+                - identifier
+                - password
+      responses:
+        "200":
+          description: User logged in successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auth_token:
+                    type: string
+        "401":
+          description: Invalid credentials.
+        "404":
+          description: User not found.
+
+  /api/admin/{email}:
+    get:
+      tags:
+        - Admin API
+      summary: For Admin Home Page
+      description: To get details required for the admin home page
+      operationId: AdminHome
+      parameters:
+        - in: path
+          name: email
+          description: Email
+          required: true
+          schema:
+            type: string
+            example: krishna@gmail.com
+      responses:
+        "200":
+          description: Required data returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tstudents:
+                    type: integer
+                  tcourses:
+                    type: integer
+                  counts:
+                    type: object
+                  StudentsDataSummaryReport:
+                    type: object
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error, List
+            name is required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      email:
+                        type: string
+                        example: email required
+        "403":
+          description: Internal Server Error
+
+  /api/upload/student:
+    post:
+      summary: "Upload student data"
+      description: "Endpoint to upload data for a new student."
+      tags:
+        - Student Profile Data API
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roll_number:
+                  type: string
+                  description: "Unique roll number of the student."
+                full_name:
+                  type: string
+                  description: "Full name of the student."
+                dob:
+                  type: string
+                  format: date
+                  description: "Date of birth of the student (YYYY-MM-DD)."
+                current_level:
+                  type: string
+                  description: "Current level of the student (e.g., foundation, diploma, degree)."
+                current_status:
+                  type: string
+                  description: "Current status of the student (e.g., active, inactive, RKA)."
+                offline_role:
+                  type: string
+                  description: "Role of the student in offline education (e.g., student, working professional, entrepreneur)."
+
+      responses:
+        "201":
+          description: "Student data uploaded successfully."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "401":
+          description: "Unauthorized - Token is missing or invalid."
+        "500":
+          description: "Internal Server Error."
+
+  /api/upload/gpa:
+    post:
+      summary: "Upload GPA details"
+      description: "Endpoint to upload GPA details for a student."
+      tags:
+        - "Student Acedmic Data API"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                student_id:
+                  type: string
+                  description: "Unique identifier of the student."
+                term_id:
+                  type: integer
+                  description: "Term identifier."
+                sgpa:
+                  type: number
+                  description: "SGPA (Semester Grade Point Average) of the student."
+                cgpa:
+                  type: number
+                  description: "CGPA (Cumulative Grade Point Average) of the student."
+
+      responses:
+        "201":
+          description: "GPA data uploaded successfully."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GpaDetails"
+        "401":
+          description: "Unauthorized - Token is missing or invalid."
+        "500":
+          description: "Internal Server Error."
+
+  /api/upload/offline_education:
+    post:
+      summary: "Upload offline education details"
+      description: "Endpoint to upload offline education details for a student."
+      tags:
+        - "Student Acedmic Data API"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roll_number:
+                  type: string
+                  description: "Unique roll number of the student."
+                degree:
+                  type: string
+                  description: "Degree pursued by the student."
+                major:
+                  type: string
+                  description: "Major of the student."
+                end_year:
+                  type: string
+                  description: "Year of completion of the degree."
+
+      responses:
+        "201":
+          description: "Offline education data uploaded successfully."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfflineEducation"
+        "401":
+          description: "Unauthorized - Token is missing or invalid."
+        "409":
+          description: "Conflict - Duplicate entry. Roll number already exists."
+        "500":
+          description: "Internal Server Error."
+
+  /api/upload/student_academic_info:
+    post:
+      summary: "Upload student academic info"
+      description: "Endpoint to upload academic information for a student."
+      tags:
+        - "Student Acedmic Data API"
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roll_number:
+                  type: string
+                  description: "Unique roll number of the student."
+                term_id:
+                  type: integer
+                  description: "Term identifier."
+                course_id:
+                  type: string
+                  description: "Course identifier."
+                avg_ga:
+                  type: number
+                  description: "Average GA (Grade Achieved) of the student."
+                quiz1:
+                  type: number
+                  description: "Score in Quiz 1."
+                quiz2:
+                  type: number
+                  description: "Score in Quiz 2."
+                end_term:
+                  type: number
+                  description: "Score in End Term exam."
+                oppe1:
+                  type: number
+                  description: "Score in OPPE 1 (if applicable)."
+                oppe2:
+                  type: number
+                  description: "Score in OPPE 2 (if applicable)."
+                project:
+                  type: number
+                  description: "Score in the project (if applicable)."
+                final_score:
+                  type: number
+                  description: "Final score of the student."
+
+      responses:
+        "201":
+          description: "Student academic info uploaded successfully."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentAcademicInfo"
+        "401":
+          description: "Unauthorized - Token is missing or invalid."
+        "500":
+          description: "Internal Server Error."
+
+  /api/course:
+    get:
+      tags:
+        - Course API
+      summary: Get all courses
+      description: Retrieve all courses.
+      operationId: getcourses
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    prerequisite:
+                      type: string
+                    corequisite:
+                      type: string
+                    type_:
+                      type: string
+                    level:
+                      type: string
+                    project:
+                      type: string
+        "403":
+          description: Internal Server Error
+
+    post:
+      tags:
+        - Course API
+      summary: Create new course
+      description: To create a new course.
+      operationId: newcourse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                course_id:
+                  type: string
+                  example: BSC3001
+                course_name:
+                  type: string
+                  example: Maths
+                pre_req:
+                  type: string
+                  example: ABC
+                co_req:
+                  type: string
+                  example: XYZ
+                type_:
+                  type: string
+                  example: adh
+                level:
+                  type: string
+                  example: Degree
+                project:
+                  type: string
+                  example: "yes"
+      responses:
+        "200":
+          description: Course Added.
+        "400":
+          description: Invalid input data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid input data."
+        "403":
+          description: Internal Server Error
+
+  /api/course/{id}:
+    put:
+      tags:
+        - Course API
+      summary: Update course
+      description: Update an existing course.
+      operationId: updatecourse
+      parameters:
+        - in: path
+          name: id
+          description: Course ID
+          required: true
+          schema:
+            type: string
+            example: BSC3001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                course_name:
+                  type: string
+                  example: Maths
+                pre_req:
+                  type: string
+                  example: ABC
+                co_req:
+                  type: string
+                  example: XYZ
+                type_:
+                  type: string
+                  example: adh
+                level:
+                  type: string
+                  example: Degree
+                project:
+                  type: string
+                  example: "yes"
+      responses:
+        "200":
+          description: Course updated successfully.
+        "402":
+          description: The course id does not exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: The course id does not exist.
+        "403":
+          description: Internal Server Error
+
+    delete:
+      tags:
+        - Course API
+      summary: Delete course
+      description: Delete an existing course.
+      operationId: deletecourse
+      parameters:
+        - in: path
+          name: id
+          description: Course ID
+          required: true
+          schema:
+            type: string
+            example: BSC3001
+      responses:
+        "200":
+          description: Course deleted successfully.
+        "402":
+          description: The course id does not exist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: The course id does not exist.
+        "403":
+          description: Internal Server Error
+
+  /api/courseFeedback/{UserIdParam}:
+    post:
+      tags:
+        - Course Feedback API
+      summary: Create new Course Feedback
+      description: To create a new course Feedback
+      operationId: Feedback
+      parameters:
+        - in: path
+          name: UserIdParam
+          description: Pass User Id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject_id:
+                  type: integer
+                  example: 1
+                rating:
+                  type: integer
+                  example: 4
+                remarks:
+                  type: string
+                  example: Very good
+      responses:
+        "201":
+          description: Course feeddback Added.
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error,
+            details are required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      course_id:
+                        type: string
+                        example: course id required
+                      course_name:
+                        type: string
+                        example: course name required
+                      level:
+                        type: string
+                        example: level required
+                      type_:
+                        type: string
+                        example: type required
+                      project:
+                        type: string
+                        example: project required
+        "403":
+          description: Internal Server Error
+    get:
+      tags:
+        - Course Feedback Api
+      summary: Get Course Feedback details
+      description: Get course feedback details based in user id
+      operationId: Get Feedback
+      parameters:
+        - in: path
+          name: UserIdParam
+          description: Pass User Id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Get Course feedback.
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error,
+            details are required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      course_id:
+                        type: string
+                        example: course id required
+                      course_name:
+                        type: string
+                        example: course name required
+                      level:
+                        type: string
+                        example: level required
+                      type_:
+                        type: string
+                        example: type required
+                      project:
+                        type: string
+                        example: project required
+        "403":
+          description: Internal Server Error
+        "404":
+          description: No feedback for given by user
+
+  /api/courseFeedback/{UserIdParam}/{subject_id}:
+    put:
+      tags:
+        - Course Feedback API
+      summary: update Course Feedback
+      description: To create a new course Feedback
+      operationId: update course Feedback
+      parameters:
+        - in: path
+          name: UserIdParam
+          description: Pass User Id
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - in: path
+          name: subject_id
+          description: Pass Subject Id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  example: 3
+                remarks:
+                  type: string
+                  example: Very good- Upd
+      responses:
+        "201":
+          description: Course feeddback Updated.
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error,
+            details are required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      course_id:
+                        type: string
+                        example: course id required
+                      course_name:
+                        type: string
+                        example: course name required
+                      level:
+                        type: string
+                        example: level required
+                      type_:
+                        type: string
+                        example: type required
+                      project:
+                        type: string
+                        example: project required
+        "403":
+          description: Internal Server Error
+        "404":
+          description: No feedback for given by user
+
+  /api/studentAcademicInfo/{RollNumberParam}/{TermIdParam}:
+    get:
+      tags:
+        - Student Acedmic Data API
+      summary: Get Course Feedback details
+      description: Get course feedback details based in user id
+      operationId: Student Academic Information
+      parameters:
+        - in: path
+          name: RollNumberParam
+          description: Rollnumber
+          required: true
+          schema:
+            type: string
+            example: 1
+        - in: path
+          name: TermIdParam
+          description: Term Id
+          required: true
+          schema:
+            type: string
+            example: F3-2024
+      responses:
+        "200":
+          description: Get Student Academic Information.
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error,
+            details are required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      course_id:
+                        type: string
+                        example: course id required
+                      course_name:
+                        type: string
+                        example: course name required
+                      level:
+                        type: string
+                        example: level required
+                      type_:
+                        type: string
+                        example: type required
+                      project:
+                        type: string
+                        example: project required
+        "403":
+          description: Internal Server Error
+        "404":
+          description: No previous course registerd by Student
+
+  /api/studentProfile/{RollNumberParam}:
+    get:
+      tags:
+        - Student Profile Data API
+      summary: Get Student Academic Information
+      description: Get Student Academic Information based in Roll Number
+      operationId: Student Profile get
+      parameters:
+        - in: path
+          name: RollNumberParam
+          description: Rollnumber
+          required: true
+          schema:
+            type: string
+            example: 1
+
+      responses:
+        "200":
+          description: Get Student Profile get.
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error,
+            details are required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      course_id:
+                        type: string
+                        example: course id required
+                      course_name:
+                        type: string
+                        example: course name required
+                      level:
+                        type: string
+                        example: level required
+                      type_:
+                        type: string
+                        example: type required
+                      project:
+                        type: string
+                        example: project required
+        "403":
+          description: Internal Server Error
+        "404":
+          description: No student profile found
+
+  /api/studentProfile:
+    post:
+      tags:
+        - Student Profile Data API
+      summary: Add Student Profile
+      description: To create Student Profile
+      operationId: Add Student Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roll_number:
+                  type: integer
+                  example: 2
+                academic_interests:
+                  type: string
+                  example: Higher study
+                learning_goals:
+                  type: string
+                  example: DP
+                schedules:
+                  type: string
+                  example: 3 month
+                commitments:
+                  type: string
+                  example: Higher study
+      responses:
+        "201":
+          description: Student Profile Created.
+        "400":
+          description: >-
+            Error!!!: No Authentication-Token, login to access this error,
+            details are required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Please log in to access this page.
+                  message:
+                    properties:
+                      course_id:
+                        type: string
+                        example: course id required
+                      course_name:
+                        type: string
+                        example: course name required
+                      level:
+                        type: string
+                        example: level required
+                      type_:
+                        type: string
+                        example: type required
+                      project:
+                        type: string
+                        example: project required
+        "403":
+          description: Internal Server Error
+
+  /api/learning_path/{roll_number}:
+    post:
+      tags:
+        - Learning Path API
+      summary: Generate Learning Path
+      description: Generate a learning path image based on course data and commit the image filename in the database.
+      parameters:
+        - in: path
+          name: roll_number
+          required: true
+          description: Roll number of the student (e.g., 21f1000125).
+          schema:
+            type: string
+            example: "21f1000125"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                term_1:
+                  type: array
+                  items:
+                    type: string
+                term_2:
+                  type: array
+                  items:
+                    type: string
+                term_3:
+                  type: array
+                  items:
+                    type: string
+                term_4:
+                  type: array
+                  items:
+                    type: string
+              example:
+                term_1: ["BDM", "MAD1", "DBMS", "MAD1 Project"]
+                term_2: ["PDSA", "MLF", "MAD2", "MAD2 Project"]
+                term_3: ["BA", "MLT", "Java", "TDS"]
+                term_4: ["MLP", "SC", "MLT Project", "MLP Project"]
+      responses:
+        "201":
+          description: Learning path generated successfully and committed to the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image_path:
+                    type: string
+        "400":
+          description: Bad Request - Invalid input data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid input data."
+        "500":
+          description: Internal Server Error.
+
+    get:
+      tags:
+        - Learning Path API
+      summary: Get Latest Learning Path
+      description: Retrieve the latest learning path for the specified user.
+      parameters:
+        - in: path
+          name: roll_number
+          required: true
+          description: Roll number of the student.
+          schema:
+            type: string
+            example: "21f1000125"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image_path:
+                    type: string
+        "404":
+          description: No learning path found for the user.
+
+  /api/top_rated_learning_paths:
+    get:
+      tags:
+        - Learning Path API
+      summary: Get Top Rated Learning Paths
+      description: Retrieve the top 6 highest rated learning paths.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    image_path:
+                      type: string
+        "404":
+          description: No learning paths found.
+
+  /api/all_learning_paths:
+    get:
+      tags:
+        - Learning Path API
+      summary: Get All Learning Paths
+      description: Retrieve all learning paths sorted by created date in descending order.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    image_path:
+                      type: string
+        "404":
+          description: No learning paths found.
+
+  /api/learning_path_feedbacks/{learning_path_id}:
+    get:
+      summary: Get Learning Path Feedbacks
+      description: Retrieve all feedbacks for a learning path.
+      tags:
+        - Learning Path Feedback API
+      parameters:
+        - in: path
+          name: learning_path_id
+          required: true
+          description: ID of the learning path.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LearningPathFeedback"
+
+        "404":
+          description: No feedback found for the specified learning path.
+
+    post:
+      summary: Add Learning Path Feedback
+      description: Add feedback for a learning path.
+      tags:
+        - Learning Path Feedback API
+      parameters:
+        - in: path
+          name: learning_path_id
+          required: true
+          description: ID of the learning path.
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearningPathFeedbackRequest"
+
+      responses:
+        "201":
+          description: Feedback added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearningPathFeedback"
+
+        "400":
+          description: Bad Request - Invalid input data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid input data."
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        active:
+          type: boolean
+        fs_uniquifier:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    Student:
+      type: object
+      properties:
+        roll_number:
+          type: string
+        full_name:
+          type: string
+        dob:
+          type: string
+        current_level:
+          type: string
+        current_status:
+          type: string
+        offline_role:
+          type: string
+
+    GpaDetails:
+      type: object
+      properties:
+        student_id:
+          type: string
+        term_id:
+          type: integer
+        sgpa:
+          type: number
+        cgpa:
+          type: number
+
+    OfflineEducation:
+      type: object
+      properties:
+        roll_number:
+          type: string
+        degree:
+          type: string
+        major:
+          type: string
+        end_year:
+          type: string
+
+    StudentAcademicInfo:
+      type: object
+      properties:
+        roll_number:
+          type: string
+        term_id:
+          type: integer
+        course_id:
+          type: string
+        avg_ga:
+          type: number
+        quiz1:
+          type: number
+        quiz2:
+          type: number
+        end_term:
+          type: number
+        oppe1:
+          type: number
+        oppe2:
+          type: number
+        project:
+          type: number
+        final_score:
+          type: number
+    LearningPathFeedback:
+      type: object
+      properties:
+        id:
+          type: integer
+        learning_path_id:
+          type: integer
+        rating:
+          type: integer
+        remarks:
+          type: string
+        created:
+          type: string
+          format: date-time
+
+    LearningPathFeedbackRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+        remarks:
+          type: string
+      required:
+        - rating
+        - remarks
+      example:
+        rating: 4
+        remarks: "Great learning experience!"
+    # LearningPathResponse:
+    #   type: object
+    #   properties:
+    #     image_path:
+    #       type: string
+    #     database_commit:
+    #       type: boolean
